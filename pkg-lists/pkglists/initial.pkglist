@@ -1,0 +1,5 @@
+# see ../brewfiles/initial.brewfile for more info
+
+apt git
+snap node
+

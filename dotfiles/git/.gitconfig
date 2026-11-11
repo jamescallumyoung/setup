@@ -1,0 +1,37 @@
+[user]
+    email = hello@jamesyoung.ch
+    name = James Young
+[core]
+    autocrlf = input
+[pull]
+    rebase = true
+[init]
+    defaultBranch = main
+[alias]
+# Short names for high-frequency commands
+    aa      = add --all                  # stage everything
+    ap      = add --patch                # interactively stage hunks
+    br      = branch
+    co      = checkout
+    d       = diff
+    ds      = diff --staged              # diff what's staged for commit
+    fap     = fetch --all --prune        # fetch all remotes and delete stale tracking branches
+    fet     = !git fap && git pull       # as above, but also pulls the current branch
+    puf     = push --force-with-lease    # safer muscle memory than --force
+    ri      = rebase -i                  # interactive rebase
+    st      = status
+    ui      = !gitui
+# longer aliases
+    aliases = config --get-regexp alias  # list all defined aliases
+    choose  = !fish -c git-branch-choose # launch an interactive branch picker
+    deli    = !fish -c git-branch-delete # launch an interactive branch deletion
+    undo    = reset --soft HEAD~1        # undo last commit, keep changes staged
+    unstage = reset HEAD --              # remove file(s) from the index without discarding changes
+# custom log aliases
+    lg      = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr)%Creset' --abbrev-commit --date=relative
+    lug     = log --oneline --decorate=short --decorate-refs-exclude="refs/tags/" --graph
+[filter "lfs"]
+    clean    = git-lfs clean -- %f
+    smudge   = git-lfs smudge -- %f
+    process  = git-lfs filter-process
+    required = true
