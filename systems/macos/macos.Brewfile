@@ -1,12 +1,4 @@
 #
-# Required for system setup
-#
-
-brew "stow"     # for managing dotfiles
-# we don't want "node" after the initial install, as it conflicts with "fnm"
-
-
-#
 # MODERN SHELL UTILS
 #
 
@@ -16,7 +8,6 @@ brew "fzf"
 brew "jq"
 brew "pick"
 brew "ripgrep"  # better search (grep, etc.)
-brew "thefuck"
 brew "ugrep"    # better grep, egrep, and fgrep
 brew "yq"       # jq for yaml and xml
 
@@ -25,29 +16,28 @@ brew "yq"       # jq for yaml and xml
 # GNU SHELL UTILS
 # (macOS may already ship some/all of these, but macOS' version is old.)
 # (where macOS already ships a version, brew installs the pkg with a "g" prefix.)
-# (we source these in .zshrc so they're used instead of the freeBSD versions macOS ships.)
 #
 
-# brew "bash" # installed in the shells section
+# brew "bash"   # installed in the shells section
 brew "coreutils"
 brew "ed"
 brew "findutils"
 brew "gawk"
-brew "grep" # we don't actually use GNU grep, as we use ugrep instead. But we install it for scripts to use.
+# brew "grep"     # ugrep has a grep compat mode; use that instead (or ripgrep)
 brew "gnu-sed"
 brew "gnu-tar"
 brew "make"
+brew "stow"     # for managing dotfiles
 
 
 #
-# ZSH and other shells
+# Shells
 #
 
+brew "bash"
+brew "fish"
 brew "zsh"
-brew "antidote"
-
-brew "bash"     # it's worth updating bash as well
-brew "fish"     # we have some fish scripts we still use
+brew "antidote" # zsh plugin manager
 
 
 #
@@ -59,14 +49,15 @@ brew "gh"
 brew "git-extras"
 brew "git-lfs"
 brew "gitui"
-brew "hub"
 
 
 #
-# Node.js
+# JS - Node, Deno, and Bun
 #
 
-brew "fnm"
+brew "fnm"      # a node version manager (better than nvm)
+# brew "deno"
+# brew "bun"
 
 
 #
@@ -76,12 +67,12 @@ brew "fnm"
 brew "jenv"                 # java virtual environment manager; allows switching java versions
 
 # for up-to-date EOL dates for Java Temurin releases see: https://endoflife.date/eclipse-temurin
-#cask "temurin"             # latest Eclipse Temurin version
-#cask "temurin@25"          # java 25 - LTS until 30 Sept 2031
-#cask "temurin@21"          # java 21 - LTS until 31 Dec 2029
-#cask "temurin@17"          # java 17 - LTS until 31 Oct 2027
-#cask "temurin@11"          # java 11 - LTS until 31 Oct 2027
-#cask "temurin@8"           # java  8 - LTS until 30 Nov 2026
+# cask "temurin"             # latest Eclipse Temurin version
+# cask "temurin@25"          # java 25 - LTS until 30 Sept 2031
+# cask "temurin@21"          # java 21 - LTS until 31 Dec 2029
+# cask "temurin@17"          # java 17 - LTS until 31 Oct 2027
+# cask "temurin@11"          # java 11 - LTS until 31 Oct 2027
+# cask "temurin@8"           # java  8 - LTS until 30 Nov 2026
 
 
 #
@@ -89,13 +80,13 @@ brew "jenv"                 # java virtual environment manager; allows switching
 #
 
 brew "podman"               # the actual podman engine (can be installed by podman-desktop, but why not use brew?)
+# Note: podman now depends on krunkit in the main brew tap, so no need to tap `libkrun/krun` to enable GPU support for podman containers
+
 cask "podman-desktop"       # docker-desktop style GUI
-tap "libkrun/krun"        
-brew "krunkit"              # enables GPU support for podman containers; useful for AI workloads
 
 brew "kubernetes-cli"       # kubectl, etc.
 brew "helm"
-brew "derailed/k9s/k9s"     # in-terminal k8s dashboard
+brew "k9s"                  # in-terminal k8s dashboard; no longer needs to tap `derailed/k9s`
 
 
 #
@@ -103,8 +94,7 @@ brew "derailed/k9s/k9s"     # in-terminal k8s dashboard
 #
 
 # DB IDEs
-cask "azure-data-studio"    # for MS SQL
-cask "redisinsight"         # for redis
+cask "redis-insight"        # for redis
 cask "tableplus"            # for Postgress
 
 # Code IDEs
@@ -114,7 +104,7 @@ cask "visual-studio-code"   # for LLM workflows
 
 # Others
 cask "bruno"                # a better Postman
-cask "google-cloud-sdk"     # gcloud cli for GCP
+cask "gcloud-cli"           # gcloud cli for GCP
 cask "iterm2"               # better macOS terminal
 
 #
@@ -132,8 +122,8 @@ cask "rocket"               # emoji tool for macOS
 cask "discord"
 cask "firefox"
 cask "google-chrome"        # for when a site doesn't work with firefox
-cask "handbrake"
-cask "ipfs"
+cask "handbrake-app"
+cask "ipfs-desktop"
 cask "lagrange"             # gemini client
 cask "plex"
 cask "sonos"
