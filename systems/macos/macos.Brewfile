@@ -88,10 +88,10 @@ brew "jenv"                 # java virtual environment manager; allows switching
 # Podman (instead of Docker), Kubernetes
 #
 
-brew "podman"           # the actual podman engine (can be installed by podman-desktop, but why not use brew?)
-cask "podman-desktop"   # docker-desktop style GUI
-tap libkrun/krun        
-brew krunkit            # enables GPU support for podman containers; useful for AI workloads
+brew "podman"               # the actual podman engine (can be installed by podman-desktop, but why not use brew?)
+cask "podman-desktop"       # docker-desktop style GUI
+tap "libkrun/krun"        
+brew "krunkit"              # enables GPU support for podman containers; useful for AI workloads
 
 brew "kubernetes-cli"       # kubectl, etc.
 brew "helm"
@@ -110,10 +110,9 @@ cask "tableplus"            # for Postgress
 # Code IDEs
 cask "jetbrains-toolbox"    # install Intellij, Webstorm, etc.
 cask "sublime-text"         # useful for big files; very good performance
-cask "visual-studio-code"   # just in case!
+cask "visual-studio-code"   # for LLM workflows
 
 # Others
-brew "liquibase"            # db migration tool; used for work
 cask "bruno"                # a better Postman
 cask "google-cloud-sdk"     # gcloud cli for GCP
 cask "iterm2"               # better macOS terminal
@@ -136,9 +135,8 @@ cask "google-chrome"        # for when a site doesn't work with firefox
 cask "handbrake"
 cask "ipfs"
 cask "lagrange"             # gemini client
-cask "plex"                 # plex client
+cask "plex"
 cask "sonos"
-cask "spotify"
 cask "transmission"
 cask "vlc"
 cask "whatsapp"
