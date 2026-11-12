@@ -1,4 +1,68 @@
 #
+# Required for system setup
+#
+
+brew "stow"     # for managing dotfiles
+# we don't want "node" after the initial install, as it conflicts with "fnm"
+
+
+#
+# MODERN SHELL UTILS
+#
+
+brew "bat"      # better cat
+brew "fd"       # better find
+brew "fzf"
+brew "jq"
+brew "pick"
+brew "ripgrep"  # better search (grep, etc.)
+brew "thefuck"
+brew "ugrep"    # better grep, egrep, and fgrep
+brew "yq"       # jq for yaml and xml
+
+
+#
+# GNU SHELL UTILS
+# (macOS may already ship some/all of these, but macOS' version is old.)
+# (where macOS already ships a version, brew installs the pkg with a "g" prefix.)
+# (we source these in .zshrc so they're used instead of the freeBSD versions macOS ships.)
+#
+
+# brew "bash" # installed in the shells section
+brew "coreutils"
+brew "ed"
+brew "findutils"
+brew "gawk"
+brew "grep" # we don't actually use GNU grep, as we use ugrep instead. But we install it for scripts to use.
+brew "gnu-sed"
+brew "gnu-tar"
+brew "make"
+
+
+#
+# ZSH and other shells
+#
+
+brew "zsh"
+brew "antidote"
+
+brew "bash"     # it's worth updating bash as well
+brew "fish"     # we have some fish scripts we still use
+
+
+#
+# GIT
+#
+
+brew "git"
+brew "gh"
+brew "git-extras"
+brew "git-lfs"
+brew "gitui"
+brew "hub"
+
+
+#
 # Node.js
 #
 

@@ -1,7 +1,0 @@
-# List Flatpak packages one per line as either:
-# - a "flathub $packageName" tuple
-# - or a full appstream URL
-
-https://flathub.org/repo/appstream/fi.skyjake.Lagrange.flatpakref
-https://flathub.org/repo/appstream/tv.plex.PlexDesktop.flatpakref
-https://flathub.org/repo/appstream/fr.handbrake.ghb.flatpakref
