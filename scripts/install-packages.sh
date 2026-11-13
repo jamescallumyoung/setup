@@ -87,12 +87,25 @@ EOF
     exit 1
 fi
 
-if [ "$manager" = flatpak ] && ! command -v flatpak >/dev/null 2>&1; then
-    cat >&2 <<'EOF'
+if [ "$manager" = flatpak ]; then
+    if command -v flatpak >/dev/null 2>&1; then
+        run_flatpak() { flatpak "$@"; }
+    
+    # test if flatpak can be run via flatpak-spawn
+    elif command -v flatpak-spawn >/dev/null 2>&1 &&
+        flatpak-spawn --host flatpak --version >/dev/null 2>&1; then
+            echo 'flatpak not found in container — using host flatpak via flatpak-spawn.'
+            run_flatpak() { flatpak-spawn --host flatpak "$@"; }
+    
+    else
+        cat >&2 <<'EOF'
 error: flatpak not found in PATH.
+error: can not run flatpak directly or via flatpak-spawn
+(If you are inside a toolbox/distrobox container, try running this script on the host directly.)
 Consult the docs at: https://flathub.org/setup
 EOF
-    exit 1
+        exit 1
+    fi
 fi
 
 # check for vi, a readable filepath, and an interactive terminal
@@ -157,5 +170,5 @@ if [ "$manager" = flatpak ]; then
     # shellcheck disable=SC2046
     set -- $(cat "$tmpfile")
     set +f
-    flatpak install "$@"
+    run_flatpak install "$@"
 fi
