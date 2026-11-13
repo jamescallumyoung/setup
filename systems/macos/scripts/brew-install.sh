@@ -15,14 +15,16 @@
 
 set -eu
 
-die() {
-    printf '%s\n' "$*" >&2
-    exit 1
-}
+# Resolve dependency paths relative to this script, so it works from anywhere.
+script_dir=$(cd "$(dirname -- "$0")" && pwd)
+. "$script_dir/../../../scripts/lib/vim-edit.sh"
 
 # check for brewfile path arg
 
-[ $# -ge 1 ] && [ -n "$1" ] || die "usage: $0 path/to/Brewfile"
+if [ $# -lt 1 ] || [ -z "$1" ]; then
+    printf '%s\n' "usage: $0 path/to/Brewfile" >&2
+    exit 1
+fi
 brewfile=$1
 
 # check brew is available
@@ -42,52 +44,21 @@ fi
 
 # check for vim, a readable brewfile, and an interactive terminal
 
-command -v vim  >/dev/null 2>&1 || die "error: vim not found in PATH"
-[ -f "$brewfile" ] && [ -r "$brewfile" ] || die "error: cannot read Brewfile: $brewfile"
-[ -r /dev/tty ] || die "error: this script needs an interactive terminal"
+vim_edit_check "$brewfile" || exit 1
 
-# --- Confirm -----------------------------------------------------------------
+# --- Edit a temporary copy of the Brewfile -----------------------------------
+echo 'We will now open a brewfile for editing.'
+echo 'After editing, "brew bundle" will install whatever is left.'
+status=0
+tmpfile=$(vim_edit_copy "$brewfile" ruby) || status=$?
 
-printf 'This will open %s in vim so you can choose what to install,\n' "$brewfile"
-printf 'then run "brew bundle" on the result.\n'
-printf 'Proceed? [y/N] '
-read -r answer </dev/tty || answer=
-case $answer in
-    [Yy] | [Yy][Ee][Ss]) ;;
-    *) echo "Aborted."; exit 0 ;;
+case $status in
+    0) ;;
+    2) echo "vim exited with an error (:cq?) — nothing installed."; exit 1 ;;
+    3) echo "No entries left in the Brewfile — nothing to install."; exit 0 ;;
+    4) echo "Aborted by user."; exit 0 ;;
+    *) echo "An unknown error occured — nothing installed." exit 1 ;;
 esac
-
-# --- Temporary copy ----------------------------------------------------------
-tmpdir=$(mktemp -d "${TMPDIR:-/tmp}/brew-install.XXXXXX") || # mktemp will replace the XXXXXX with random chars
-    die "error: could not create temporary directory"
-
-# Remove the temp copy however the script ends (EXIT trap is POSIX: signal 0).
-trap 'rm -rf "$tmpdir"' 0
-trap 'exit 130' INT
-trap 'exit 143' TERM HUP
-
-tmpfile=$tmpdir/Brewfile
-
-{
-    echo '# Delete or comment out (#) lines you do NOT want installed.'
-    echo '# Save and quit with :wq to install.  Quit with :cq to abort.'
-    echo '# Changes made here are temporary and will not be saved.'
-    echo
-    cat "$brewfile"
-} >"$tmpfile"
-
-# --- Edit the Brewfile -------------------------------------------------------
-# Talk to the terminal directly so this works even if stdin/stdout are redirected.
-if ! vim -c 'set filetype=ruby' "$tmpfile" </dev/tty >/dev/tty; then
-    echo "vim exited with an error (:cq?) — nothing installed."
-    exit 1
-fi
-
-# Bail out if nothing is left except comments and blank lines.
-if ! grep -v -e '^[[:space:]]*#' -e '^[[:space:]]*$' "$tmpfile" >/dev/null; then
-    echo "No entries left in the Brewfile — nothing to install."
-    exit 0
-fi
 
 # --- Apply -------------------------------------------------------------------
 echo "Running brew bundle..."
