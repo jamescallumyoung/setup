@@ -3,7 +3,7 @@
 # Requires: lib/confirm.sh, sourced before this file.
 #
 # Ask for confirmation, copy a file to a temporary location, open the copy in
-# vim, and print the path of the edited copy. The original file is never
+# vi, and print the path of the edited copy. The original file is never
 # modified.
 #
 # Intended for "pick what to install" flows: a package list (Brewfile, dnf
@@ -12,11 +12,11 @@
 # Exit codes (shared by both functions):
 #   0   success
 #   1   not used here: reserved for unexpected failures from the shell itself
-#   2   vim exited non-zero (e.g. the user quit with :cq)
+#   2   vi exited non-zero (e.g. the user quit with :cq)
 #   3   nothing left except comments and blank lines
 #   4   the user declined at the confirmation prompt
 #   10  usage error (unknown option or no file given)
-#   11  vim not found in PATH
+#   11  vi not found in PATH
 #   12  cannot read the source file
 #   13  no interactive terminal
 #   14  could not create the temporary directory
@@ -28,7 +28,7 @@
 
 vim_edit_check() {
     # $1: path to the source file
-    # Check for vim, a readable source file, and an interactive terminal.
+    # Check for vi, a readable source file, and an interactive terminal.
     # Returns 0 if all is well; otherwise prints an error to stderr and
     # returns 10-13 (see the exit codes above). vim_edit_copy calls this
     # itself; call it directly to fail early, e.g. before other setup work.
@@ -36,8 +36,8 @@ vim_edit_check() {
         printf '%s\n' "error: no file given" >&2
         return 10
     fi
-    if ! command -v vim >/dev/null 2>&1; then
-        printf '%s\n' "error: vim not found in PATH" >&2
+    if ! command -v vi >/dev/null 2>&1; then
+        printf '%s\n' "error: vi not found in PATH" >&2
         return 11
     fi
     if ! { [ -f "$1" ] && [ -r "$1" ]; }; then
@@ -66,7 +66,7 @@ vim_edit_copy() {
     #
     # Always asks "Proceed? [y/N]" on the terminal before doing anything.
     #
-    # Copies a file and opens it with vim so the user can edit it.
+    # Copies a file and opens it with vi so the user can edit it.
     # On success, prints the path of the edited copy to stdout. On failure,
     # prints nothing to stdout. The copy lives under $TMPDIR (or /tmp) and is
     # not removed; the OS cleans it up eventually.
@@ -100,7 +100,7 @@ Changes made here are temporary and will not be saved.}"
 
     # --- Confirm -------------------------------------------------------------
     # Prompt on the terminal: stdout is reserved for the returned path.
-    printf 'This will open %s in vim so you can choose what to keep.\n' "$vim_edit_src" >/dev/tty
+    printf 'This will open %s in vi so you can choose what to keep.\n' "$vim_edit_src" >/dev/tty
     confirm 'Proceed?' || return 4
 
     # --- Temporary copy ------------------------------------------------------
@@ -110,7 +110,7 @@ Changes made here are temporary and will not be saved.}"
         return 14
     fi
 
-    # Keep the original basename so the file is recognisable in vim.
+    # Keep the original basename so the file is recognisable in vi.
     vim_edit_file=$vim_edit_dir/${vim_edit_src##*/}
 
     if ! {
@@ -126,9 +126,9 @@ Changes made here are temporary and will not be saved.}"
     # Talk to the terminal directly: stdout is reserved for the returned path,
     # and stdin/stdout may be captured by $(...) or a pipeline.
     if [ -n "$vim_edit_filetype" ]; then
-        vim -c "set filetype=$vim_edit_filetype" "$vim_edit_file" </dev/tty >/dev/tty
+        vi -c "set filetype=$vim_edit_filetype" "$vim_edit_file" </dev/tty >/dev/tty
     else
-        vim "$vim_edit_file" </dev/tty >/dev/tty
+        vi "$vim_edit_file" </dev/tty >/dev/tty
     fi || return 2
 
     # Optionally strip comments: drop everything from "#" to end of line

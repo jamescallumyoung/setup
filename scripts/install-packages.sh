@@ -16,7 +16,7 @@
 # Usage:
 #   ./install-packages.sh -m brew|dnf|flatpak -f path/to/file
 #
-# The list is copied to a temporary location and opened in vim. Delete or
+# The list is copied to a temporary location and opened in vi. Delete or
 # comment out (#) any lines you don't want, then save and quit (:wq).
 # Quit with :cq to abort without installing anything.
 # Your edits are never written back to the original file.
@@ -95,7 +95,7 @@ EOF
     exit 1
 fi
 
-# check for vim, a readable filepath, and an interactive terminal
+# check for vi, a readable filepath, and an interactive terminal
 
 vim_edit_check "$filepath" || exit 1
 
@@ -125,7 +125,7 @@ fi
 
 case $status in
     0) ;;
-    2) echo "vim exited with an error (:cq?) — nothing installed."; exit 1 ;;
+    2) echo "vi exited with an error (:cq?) — nothing installed."; exit 1 ;;
     3) echo "No entries left in the package list — nothing to install."; exit 0 ;;
     4) echo "Aborted by user."; exit 0 ;;
     *) echo "An unknown error occured — nothing installed."; exit 1 ;;
