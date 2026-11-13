@@ -13,4 +13,4 @@ set -eu
 # Resolve paths relative to this script, so it works from any directory.
 script_dir=$(cd "$(dirname -- "$0")" && pwd)
 
-sh "$script_dir/scripts/brew-install.sh" "$script_dir/macos.Brewfile"
+sh "$script_dir/../../scripts/install-packages.sh" -m "brew" -f "$script_dir/macos.Brewfile"
