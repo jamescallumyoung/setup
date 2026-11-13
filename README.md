@@ -1,16 +1,14 @@
 # setup
 
-This repo includes resources used to set up a new system to my specifications.
+This repo includes resources used to set up a new macOS or Fedora system to my specifications.
 
 It is expected to be used in conjunction with [my dotfiles repo](https://github.com/jamescallumyoung/dotfiles).
 
-## macOS
+## Features
 
-macOS is currently the only supported platform.
+This repo provides scripts to:
 
-This repo provides scripts to setup a macOS system. These can:
-
-- install desired packages with Homebrew
+- install desired packages with Homebrew, dnf, and Flatpak
 - configure the default shell
 
 ## Usage Guide
@@ -24,6 +22,13 @@ macOS ships a version of Git that is good enough for our purposes.
 The setup process will install a more modern version.
 
 To detect if Git is installed, run `which git`.
+
+**vi**
+
+vi must be installed.
+vi is part of POSIX so it should be available on all Linux/Unix platforms.
+
+To detect if vi is installed, run `which vi`.
 
 **fzf**
 
@@ -50,17 +55,17 @@ git clone https://github.com/jamescallumyoung/setup.git $HOME/.setuprepo
 Install packages with:
 
 ```shell
-cd $HOME/.setuprepo
-chmod +x ./systems/macos/setup-macos.sh
-./systems/macos/setup-macos.sh
+# for macOS
+sh $HOME/.setuprepo/systems/macos/setup-macos.sh
+
+# for fedora
+sh $HOME/.setuprepo/systems/fedora/setup-fedora.sh
 ```
 
 Change the default shell with:
 
 ```shell
-cd $HOME/.setuprepo
-chmod +x ./scripts/change-shell.sh
-./scripts/change-shell.sh
+sh $HOME/.setuprepo/scripts/change-shell.sh
 ```
 
 ### 3 - Additional manual steps
