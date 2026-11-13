@@ -1,5 +1,5 @@
-# lib/vim-edit.sh — sourced, not executed directly.
-# Provides: vim_edit_check (preconditions), vim_edit_copy (copy + edit)
+# lib/vi-edit.sh — sourced, not executed directly.
+# Provides: vi_edit_check (preconditions), vi_edit_copy (copy + edit)
 # Requires: lib/confirm.sh, sourced before this file.
 #
 # Ask for confirmation, copy a file to a temporary location, open the copy in
@@ -26,11 +26,11 @@
 #
 # POSIX sh — no bashisms.
 
-vim_edit_check() {
+vi_edit_check() {
     # $1: path to the source file
     # Check for vi, a readable source file, and an interactive terminal.
     # Returns 0 if all is well; otherwise prints an error to stderr and
-    # returns 10-13 (see the exit codes above). vim_edit_copy calls this
+    # returns 10-13 (see the exit codes above). vi_edit_copy calls this
     # itself; call it directly to fail early, e.g. before other setup work.
     if [ -z "${1:-}" ]; then
         printf '%s\n' "error: no file given" >&2
@@ -53,7 +53,7 @@ vim_edit_check() {
     fi
 }
 
-vim_edit_copy() {
+vi_edit_copy() {
     # Options (must come before the positional arguments):
     #   -s  strip comments from the edited copy: removes comment lines,
     #       trailing "# ..." comments, and blank lines. Use for formats that
@@ -72,52 +72,52 @@ vim_edit_copy() {
     # not removed; the OS cleans it up eventually.
     #
     # Usage:
-    #   file=$(vim_edit_copy "$list") || exit
-    #   file=$(vim_edit_copy -s "$list" conf) || exit
+    #   file=$(vi_edit_copy "$list") || exit
+    #   file=$(vi_edit_copy -s "$list" conf) || exit
     #
     # Returns 0 when the edited copy is ready (path printed to stdout),
     # otherwise one of the exit codes listed at the top of this file.
 
     # Parse options. Reset OPTIND so repeated calls start from the beginning.
-    vim_edit_strip=
+    vi_edit_strip=
     OPTIND=1
-    while getopts s vim_edit_opt; do
-        case $vim_edit_opt in
-            s) vim_edit_strip=1 ;;
+    while getopts s vi_edit_opt; do
+        case $vi_edit_opt in
+            s) vi_edit_strip=1 ;;
             *) return 10 ;;  # getopts has already printed an error
         esac
     done
     shift $((OPTIND - 1))
 
-    vim_edit_src="${1:-}"
-    vim_edit_filetype="${2:-}"
-    vim_edit_header="${3:-Delete or comment out (#) lines you do NOT want.
+    vi_edit_src="${1:-}"
+    vi_edit_filetype="${2:-}"
+    vi_edit_header="${3:-Delete or comment out (#) lines you do NOT want.
 Save and quit with :wq to continue.  Quit with :cq to abort.
 Changes made here are temporary and will not be saved.}"
 
     # check prerequisites
-    vim_edit_check "$vim_edit_src" || return  # pass its exit code through
+    vi_edit_check "$vi_edit_src" || return  # pass its exit code through
 
     # --- Confirm -------------------------------------------------------------
     # Prompt on the terminal: stdout is reserved for the returned path.
-    printf 'This will open %s in vi so you can choose what to keep.\n' "$vim_edit_src" >/dev/tty
+    printf 'This will open %s in vi so you can choose what to keep.\n' "$vi_edit_src" >/dev/tty
     confirm 'Proceed?' || return 4
 
     # --- Temporary copy ------------------------------------------------------
     # mktemp will replace the XXXXXX with random chars
-    if ! vim_edit_dir=$(mktemp -d "${TMPDIR:-/tmp}/vim-edit.XXXXXX"); then
+    if ! vi_edit_dir=$(mktemp -d "${TMPDIR:-/tmp}/vi-edit.XXXXXX"); then
         printf '%s\n' "error: could not create temporary directory" >&2
         return 14
     fi
 
     # Keep the original basename so the file is recognisable in vi.
-    vim_edit_file=$vim_edit_dir/${vim_edit_src##*/}
+    vi_edit_file=$vi_edit_dir/${vi_edit_src##*/}
 
     if ! {
-        printf '%s\n' "$vim_edit_header" | sed 's/^/# /'
+        printf '%s\n' "$vi_edit_header" | sed 's/^/# /'
         echo
-        cat "$vim_edit_src"
-    } >"$vim_edit_file"; then
+        cat "$vi_edit_src"
+    } >"$vi_edit_file"; then
         printf '%s\n' "error: could not write temporary copy" >&2
         return 15
     fi
@@ -125,28 +125,28 @@ Changes made here are temporary and will not be saved.}"
     # --- Edit the copy -------------------------------------------------------
     # Talk to the terminal directly: stdout is reserved for the returned path,
     # and stdin/stdout may be captured by $(...) or a pipeline.
-    if [ -n "$vim_edit_filetype" ]; then
-        vi -c "set filetype=$vim_edit_filetype" "$vim_edit_file" </dev/tty >/dev/tty
+    if [ -n "$vi_edit_filetype" ]; then
+        vi -c "set filetype=$vi_edit_filetype" "$vi_edit_file" </dev/tty >/dev/tty
     else
-        vi "$vim_edit_file" </dev/tty >/dev/tty
+        vi "$vi_edit_file" </dev/tty >/dev/tty
     fi || return 2
 
     # Optionally strip comments: drop everything from "#" to end of line
     # (with any whitespace before it), then delete lines left blank.
     # sed -i isn't POSIX, so write to a second file and move it into place.
-    if [ -n "$vim_edit_strip" ]; then
+    if [ -n "$vi_edit_strip" ]; then
         if ! sed -e 's/[[:space:]]*#.*//' -e '/^[[:space:]]*$/d' \
-                "$vim_edit_file" >"$vim_edit_file.stripped" ||
-            ! mv "$vim_edit_file.stripped" "$vim_edit_file"; then
+                "$vi_edit_file" >"$vi_edit_file.stripped" ||
+            ! mv "$vi_edit_file.stripped" "$vi_edit_file"; then
             printf '%s\n' "error: could not strip comments from temporary copy" >&2
             return 16
         fi
     fi
 
     # Report if nothing is left except comments and blank lines.
-    if ! grep -v -e '^[[:space:]]*#' -e '^[[:space:]]*$' "$vim_edit_file" >/dev/null; then
+    if ! grep -v -e '^[[:space:]]*#' -e '^[[:space:]]*$' "$vi_edit_file" >/dev/null; then
         return 3
     fi
 
-    printf '%s\n' "$vim_edit_file"
+    printf '%s\n' "$vi_edit_file"
 }

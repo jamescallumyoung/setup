@@ -28,7 +28,7 @@ set -eu
 # Resolve dependency paths relative to this script, so it works from anywhere.
 script_dir=$(cd "$(dirname -- "$0")" && pwd)
 . "$script_dir/lib/confirm.sh"
-. "$script_dir/lib/vim-edit.sh"
+. "$script_dir/lib/vi-edit.sh"
 
 # get the "-m" and "-f" options
 
@@ -97,7 +97,7 @@ fi
 
 # check for vi, a readable filepath, and an interactive terminal
 
-vim_edit_check "$filepath" || exit 1
+vi_edit_check "$filepath" || exit 1
 
 # --- Edit a temporary copy of the package list ------------------------------
 echo 'We will now open the package list for editing.'
@@ -106,21 +106,21 @@ status=0
 # brew bundle understands comments, so keep them
 if [ "$manager" = brew ]; then
     echo 'After editing, "brew bundle" will install whatever is left.'
-    tmpfile=$(vim_edit_copy "$filepath" ruby) || status=$?
+    tmpfile=$(vi_edit_copy "$filepath" ruby) || status=$?
 fi
 
 # dnf takes bare package names, so strip comments
 if [ "$manager" = dnf ]; then
     echo 'After editing, "dnf install" will install whatever is left.'
     echo 'Comments in the file will automatically be stripped out.'
-    tmpfile=$(vim_edit_copy -s "$filepath" conf) || status=$?
+    tmpfile=$(vi_edit_copy -s "$filepath" conf) || status=$?
 fi
 
 # flatpak takes bare package ids, so strip comments
 if [ "$manager" = flatpak ]; then
     echo 'After editing, "flatpak install" will install whatever is left.'
     echo 'Comments in the file will automatically be stripped out.'
-    tmpfile=$(vim_edit_copy -s "$filepath" conf) || status=$?
+    tmpfile=$(vi_edit_copy -s "$filepath" conf) || status=$?
 fi
 
 case $status in
