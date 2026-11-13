@@ -21,16 +21,34 @@
 # Quit with :cq to abort without installing anything.
 # Your edits are never written back to the original file.
 #
+# Exit codes:
+#   0       success, or nothing left in the list to install
+#   2       unknown option or unexpected argument
+#   3       -m was not given
+#   4       unsupported package manager
+#   5       -f was not given
+#   6       brew not found in PATH
+#   7       dnf not found in PATH
+#   8       flatpak not available (directly or via flatpak-spawn)
+#   9       vi exited with an error (e.g. the user quit with :cq)
+#   10-16   passed through from lib/vi-edit.sh (see that file)
+#   20      the user declined at the confirmation prompt
+#   21      unknown error while preparing the package list
+#   *       other: a command failed (set -e), e.g. the install itself
+#
 # POSIX sh — no bashisms.
 
 set -eu
 
 # Resolve dependency paths relative to this script, so it works from anywhere.
 script_dir=$(cd "$(dirname -- "$0")" && pwd)
-. "$script_dir/lib/confirm.sh"
+. "$script_dir/lib/confirm.sh"  # required by vi-edit.sh
 . "$script_dir/lib/vi-edit.sh"
 
-# get the "-m" and "-f" options
+info() { printf '%s\n' "$*" >&2; }
+err()  { printf 'error: %s\n' "$*" >&2; }
+
+# get the -m and -f options
 
 usage="usage: $0 -m brew|dnf|flatpak -f path/to/file"
 
@@ -40,28 +58,29 @@ while getopts m:f: opt; do
     case $opt in
         m) manager=$OPTARG ;;
         f) filepath=$OPTARG ;;
-        *) printf '%s\n' "$usage" >&2; exit 1 ;;  # getopts has printed the error
+        *) info "$usage"; exit 2 ;;  # getopts has printed the error
     esac
 done
 shift $((OPTIND - 1))
 
 # no positional args are accepted
 if [ $# -gt 0 ]; then
-    printf '%s\n' "error: unexpected argument: $1" "$usage" >&2
-    exit 1
+    err "unexpected argument: $1"
+    info "$usage"
+    exit 2
 fi
 
 case $manager in
     brew | dnf | flatpak) ;;
-    '') printf '%s\n' "error: -m brew|dnf|flatpak is required" >&2; exit 1 ;;
-    *) printf '%s\n' "error: unsupported package manager: $manager (expected brew, dnf, or flatpak)" >&2; exit 1 ;;
+    '') err '-m brew|dnf|flatpak is required'; exit 3 ;;
+    *) err "unsupported package manager: $manager (expected brew, dnf, or flatpak)"; exit 4 ;;
 esac
 
 # check the "-f" option was given
 
 if [ -z "$filepath" ]; then
-    printf '%s\n' "error: -f path/to/file is required" >&2
-    exit 1
+    err '-f path/to/file is required'
+    exit 5
 fi
 
 # check package manager is available
@@ -76,7 +95,7 @@ Install Homebrew with:
 
 then rerun this setup script.
 EOF
-    exit 1
+    exit 6
 fi
 
 if [ "$manager" = dnf ] && ! command -v dnf >/dev/null 2>&1; then
@@ -84,7 +103,7 @@ if [ "$manager" = dnf ] && ! command -v dnf >/dev/null 2>&1; then
 error: dnf not found in PATH.
 Consult your OS docs for support for dnf.
 EOF
-    exit 1
+    exit 7
 fi
 
 if [ "$manager" = flatpak ]; then
@@ -94,7 +113,7 @@ if [ "$manager" = flatpak ]; then
     # test if flatpak can be run via flatpak-spawn
     elif command -v flatpak-spawn >/dev/null 2>&1 &&
         flatpak-spawn --host flatpak --version >/dev/null 2>&1; then
-            echo 'flatpak not found in container — using host flatpak via flatpak-spawn.'
+            info 'flatpak not found in container — using host flatpak via flatpak-spawn.'
             run_flatpak() { flatpak-spawn --host flatpak "$@"; }
     
     else
@@ -104,55 +123,56 @@ error: can not run flatpak directly or via flatpak-spawn
 (If you are inside a toolbox/distrobox container, try running this script on the host directly.)
 Consult the docs at: https://flathub.org/setup
 EOF
-        exit 1
+        exit 8
     fi
 fi
 
 # check for vi, a readable filepath, and an interactive terminal
 
-vi_edit_check "$filepath" || exit 1
+vi_edit_check "$filepath" || exit  # pass its exit code (10-13) through
 
 # --- Edit a temporary copy of the package list ------------------------------
-echo 'We will now open the package list for editing.'
+info 'We will now open the package list for editing.'
 status=0
 
 # brew bundle understands comments, so keep them
 if [ "$manager" = brew ]; then
-    echo 'After editing, "brew bundle" will install whatever is left.'
+    info 'After editing, "brew bundle" will install whatever is left.'
     tmpfile=$(vi_edit_copy "$filepath" ruby) || status=$?
 fi
 
 # dnf takes bare package names, so strip comments
 if [ "$manager" = dnf ]; then
-    echo 'After editing, "dnf install" will install whatever is left.'
-    echo 'Comments in the file will automatically be stripped out.'
+    info 'After editing, "dnf install" will install whatever is left.'
+    info 'Comments in the file will automatically be stripped out.'
     tmpfile=$(vi_edit_copy -s "$filepath" conf) || status=$?
 fi
 
 # flatpak takes bare package ids, so strip comments
 if [ "$manager" = flatpak ]; then
-    echo 'After editing, "flatpak install" will install whatever is left.'
-    echo 'Comments in the file will automatically be stripped out.'
+    info 'After editing, "flatpak install" will install whatever is left.'
+    info 'Comments in the file will automatically be stripped out.'
     tmpfile=$(vi_edit_copy -s "$filepath" conf) || status=$?
 fi
 
 case $status in
     0) ;;
-    2) echo "vi exited with an error (:cq?) — nothing installed."; exit 1 ;;
-    3) echo "No entries left in the package list — nothing to install."; exit 0 ;;
-    4) echo "Aborted by user."; exit 0 ;;
-    *) echo "An unknown error occured — nothing installed."; exit 1 ;;
+    2) err 'vi exited with an error (:cq?) — nothing installed.'; exit 9 ;;
+    3) info 'No entries left in the package list — nothing to install.'; exit 0 ;;
+    4) err 'Aborted by user.'; exit 20 ;;
+    1[0-6]) exit "$status" ;;  # vi-edit.sh has printed the error
+    *) err 'An unknown error occurred — nothing installed.'; exit 21 ;;
 esac
 
 # --- Apply -------------------------------------------------------------------
 
 if [ "$manager" = brew ]; then
-    echo "Running brew bundle..."
+    info 'Running brew bundle...'
     brew bundle --file="$tmpfile"
 fi
 
 if [ "$manager" = dnf ]; then
-    echo "Running dnf install..."
+    info 'Running dnf install...'
     # One package name per line. Disable globbing so names are taken literally,
     # then let word splitting turn the lines into arguments for dnf.
     set -f
@@ -163,7 +183,7 @@ if [ "$manager" = dnf ]; then
 fi
 
 if [ "$manager" = flatpak ]; then
-    echo "Running flatpak install..."
+    info 'Running flatpak install...'
     # One package name per line. Disable globbing so names are taken literally,
     # then let word splitting turn the lines into arguments for flatpak.
     set -f
