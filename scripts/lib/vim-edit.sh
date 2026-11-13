@@ -1,5 +1,6 @@
 # lib/vim-edit.sh — sourced, not executed directly.
 # Provides: vim_edit_check (preconditions), vim_edit_copy (copy + edit)
+# Requires: lib/confirm.sh, sourced before this file.
 #
 # Ask for confirmation, copy a file to a temporary location, open the copy in
 # vim, and print the path of the edited copy. The original file is never
@@ -100,12 +101,7 @@ Changes made here are temporary and will not be saved.}"
     # --- Confirm -------------------------------------------------------------
     # Prompt on the terminal: stdout is reserved for the returned path.
     printf 'This will open %s in vim so you can choose what to keep.\n' "$vim_edit_src" >/dev/tty
-    printf 'Proceed? [y/N] ' >/dev/tty
-    read -r vim_edit_answer </dev/tty || vim_edit_answer=
-    case $vim_edit_answer in
-        [Yy] | [Yy][Ee][Ss]) ;;
-        *) return 4 ;;
-    esac
+    confirm 'Proceed?' || return 4
 
     # --- Temporary copy ------------------------------------------------------
     # mktemp will replace the XXXXXX with random chars

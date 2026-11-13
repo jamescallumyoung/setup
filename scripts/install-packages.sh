@@ -27,6 +27,7 @@ set -eu
 
 # Resolve dependency paths relative to this script, so it works from anywhere.
 script_dir=$(cd "$(dirname -- "$0")" && pwd)
+. "$script_dir/lib/confirm.sh"
 . "$script_dir/lib/vim-edit.sh"
 
 # get the "-m" and "-f" options
