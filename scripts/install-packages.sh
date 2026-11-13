@@ -6,13 +6,15 @@
 #
 # Supported package managers are:
 #   brew (`brew bundle`)
+#   dnf (`dnf install`)
+#   flatpak (`flatpak install`)
 #
 # Can strip comments from the list, for package managers that do not
 # support comments. Comments are lines starting with "#", and any
 # trailing comments starting with "#".
 #
 # Usage:
-#   ./install-packages.sh -m brew -f path/to/file
+#   ./install-packages.sh -m brew|dnf|flatpak -f path/to/file
 #
 # The list is copied to a temporary location and opened in vim. Delete or
 # comment out (#) any lines you don't want, then save and quit (:wq).
@@ -29,7 +31,7 @@ script_dir=$(cd "$(dirname -- "$0")" && pwd)
 
 # get the "-m" and "-f" options
 
-usage="usage: $0 -m brew -f path/to/file"
+usage="usage: $0 -m brew|dnf|flatpak -f path/to/file"
 
 manager=
 filepath=
@@ -49,9 +51,9 @@ if [ $# -gt 0 ]; then
 fi
 
 case $manager in
-    brew) ;;
-    '') printf '%s\n' "error: -m brew is required" >&2; exit 1 ;;
-    *) printf '%s\n' "error: unsupported package manager: $manager (expected brew)" >&2; exit 1 ;;
+    brew | dnf | flatpak) ;;
+    '') printf '%s\n' "error: -m brew|dnf|flatpak is required" >&2; exit 1 ;;
+    *) printf '%s\n' "error: unsupported package manager: $manager (expected brew, dnf, or flatpak)" >&2; exit 1 ;;
 esac
 
 # check the "-f" option was given
@@ -76,6 +78,22 @@ EOF
     exit 1
 fi
 
+if [ "$manager" = dnf ] && ! command -v dnf >/dev/null 2>&1; then
+    cat >&2 <<'EOF'
+error: dnf not found in PATH.
+Consult your OS docs for support for dnf.
+EOF
+    exit 1
+fi
+
+if [ "$manager" = flatpak ] && ! command -v flatpak >/dev/null 2>&1; then
+    cat >&2 <<'EOF'
+error: flatpak not found in PATH.
+Consult the docs at: https://flathub.org/setup
+EOF
+    exit 1
+fi
+
 # check for vim, a readable filepath, and an interactive terminal
 
 vim_edit_check "$filepath" || exit 1
@@ -88,6 +106,20 @@ status=0
 if [ "$manager" = brew ]; then
     echo 'After editing, "brew bundle" will install whatever is left.'
     tmpfile=$(vim_edit_copy "$filepath" ruby) || status=$?
+fi
+
+# dnf takes bare package names, so strip comments
+if [ "$manager" = dnf ]; then
+    echo 'After editing, "dnf install" will install whatever is left.'
+    echo 'Comments in the file will automatically be stripped out.'
+    tmpfile=$(vim_edit_copy -s "$filepath" conf) || status=$?
+fi
+
+# flatpak takes bare package ids, so strip comments
+if [ "$manager" = flatpak ]; then
+    echo 'After editing, "flatpak install" will install whatever is left.'
+    echo 'Comments in the file will automatically be stripped out.'
+    tmpfile=$(vim_edit_copy -s "$filepath" conf) || status=$?
 fi
 
 case $status in
@@ -103,4 +135,26 @@ esac
 if [ "$manager" = brew ]; then
     echo "Running brew bundle..."
     brew bundle --file="$tmpfile"
+fi
+
+if [ "$manager" = dnf ]; then
+    echo "Running dnf install..."
+    # One package name per line. Disable globbing so names are taken literally,
+    # then let word splitting turn the lines into arguments for dnf.
+    set -f
+    # shellcheck disable=SC2046
+    set -- $(cat "$tmpfile")
+    set +f
+    sudo dnf install "$@"
+fi
+
+if [ "$manager" = flatpak ]; then
+    echo "Running flatpak install..."
+    # One package name per line. Disable globbing so names are taken literally,
+    # then let word splitting turn the lines into arguments for flatpak.
+    set -f
+    # shellcheck disable=SC2046
+    set -- $(cat "$tmpfile")
+    set +f
+    flatpak install "$@"
 fi
