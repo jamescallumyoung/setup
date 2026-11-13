@@ -53,6 +53,11 @@ vim_edit_check() {
 }
 
 vim_edit_copy() {
+    # Options (must come before the positional arguments):
+    #   -s  strip comments from the edited copy: removes comment lines,
+    #       trailing "# ..." comments, and blank lines. Use for formats that
+    #       don't understand comments (e.g. a plain package list).
+    #
     # $1: path to the source file
     # $2: optional vim filetype for syntax highlighting, e.g. "ruby"
     # $3: optional instructions (one or more lines) written as '# ' comments
@@ -67,9 +72,22 @@ vim_edit_copy() {
     #
     # Usage:
     #   file=$(vim_edit_copy "$list") || exit
+    #   file=$(vim_edit_copy -s "$list" conf) || exit
     #
     # Returns 0 when the edited copy is ready (path printed to stdout),
     # otherwise one of the exit codes listed at the top of this file.
+
+    # Parse options. Reset OPTIND so repeated calls start from the beginning.
+    vim_edit_strip=
+    OPTIND=1
+    while getopts s vim_edit_opt; do
+        case $vim_edit_opt in
+            s) vim_edit_strip=1 ;;
+            *) return 10 ;;  # getopts has already printed an error
+        esac
+    done
+    shift $((OPTIND - 1))
+
     vim_edit_src="${1:-}"
     vim_edit_filetype="${2:-}"
     vim_edit_header="${3:-Delete or comment out (#) lines you do NOT want.
@@ -116,6 +134,18 @@ Changes made here are temporary and will not be saved.}"
     else
         vim "$vim_edit_file" </dev/tty >/dev/tty
     fi || return 2
+
+    # Optionally strip comments: drop everything from "#" to end of line
+    # (with any whitespace before it), then delete lines left blank.
+    # sed -i isn't POSIX, so write to a second file and move it into place.
+    if [ -n "$vim_edit_strip" ]; then
+        if ! sed -e 's/[[:space:]]*#.*//' -e '/^[[:space:]]*$/d' \
+                "$vim_edit_file" >"$vim_edit_file.stripped" ||
+            ! mv "$vim_edit_file.stripped" "$vim_edit_file"; then
+            printf '%s\n' "error: could not strip comments from temporary copy" >&2
+            return 16
+        fi
+    fi
 
     # Report if nothing is left except comments and blank lines.
     if ! grep -v -e '^[[:space:]]*#' -e '^[[:space:]]*$' "$vim_edit_file" >/dev/null; then
